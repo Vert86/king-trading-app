@@ -63,7 +63,7 @@
             <field name="VAR" id="_ry@=Pn~?k:OMsm69^mj">maxStake</field>
             <value name="VALUE">
               <shadow type="math_number" id="@25M~E*0u|xxQNgzLT*v">
-                <field name="NUM">150</field>
+                <field name="NUM">1500</field>
               </shadow>
             </value>
           </block>
@@ -275,7 +275,7 @@
                             </value>
                             <value name="B">
                               <block type="math_number" id=",a^QBRQ%o%:dWMs,19|2">
-                                <field name="NUM">2</field>
+                                <field name="NUM">3</field>
                               </block>
                             </value>
                           </block>
@@ -324,7 +324,7 @@
             <field name="VAR" id="LbJ%gBkQn8lHX-LuY;OE">rdalembert:profitThreshold</field>
             <value name="VALUE">
               <shadow type="math_number" id=",IFuj6oUT]7V@]%KDjla">
-                <field name="NUM">5</field>
+                <field name="NUM">10</field>
               </shadow>
             </value>
           </block>
@@ -349,7 +349,7 @@
                 <field name="VAR" id="p:YOw{BN8)4wTUEgW?f;">rdalembert:lossThreshold</field>
                 <value name="VALUE">
                   <shadow type="math_number" id=";r.=1[#D:iX}{,}ML-Jh">
-                    <field name="NUM">150</field>
+                    <field name="NUM">1600</field>
                   </shadow>
                 </value>
               </block>
@@ -516,16 +516,47 @@
               </block>
             </value>
             <value name="ELSE">
-              <block type="math_arithmetic" id="mart-mult-2">
-                <field name="OP">MULTIPLY</field>
-                <value name="A">
-                  <shadow type="math_number" id="mart-shadow-a2"><field name="NUM">1</field></shadow>
-                  <block type="variables_get" id="mart-get-stake-2">
-                    <field name="VAR" id="u]E%rdqSO!DWc9s^8K]F">rdalembert:initialStake</field>
+              <block type="logic_ternary" id="mart-inner-ternary-2">
+                <value name="IF">
+                  <block type="logic_compare" id="mart-cmp-2">
+                    <field name="OP">EQ</field>
+                    <value name="A">
+                      <block type="variables_get" id="mart-get-tu-2">
+                        <field name="VAR" id="Xv=?/_{i5i7(YfFJqUM2">rdalembert:totalUnits</field>
+                      </block>
+                    </value>
+                    <value name="B">
+                      <block type="math_number" id="mart-num-2"><field name="NUM">2</field></block>
+                    </value>
                   </block>
                 </value>
-                <value name="B">
-                  <shadow type="math_number" id="mart-shadow-b2"><field name="NUM">123.43</field></shadow>
+                <value name="THEN">
+                  <block type="math_arithmetic" id="mart-mult-2">
+                    <field name="OP">MULTIPLY</field>
+                    <value name="A">
+                      <shadow type="math_number" id="mart-shadow-a2"><field name="NUM">1</field></shadow>
+                      <block type="variables_get" id="mart-get-stake-2">
+                        <field name="VAR" id="u]E%rdqSO!DWc9s^8K]F">rdalembert:initialStake</field>
+                      </block>
+                    </value>
+                    <value name="B">
+                      <shadow type="math_number" id="mart-shadow-b2"><field name="NUM">123.43</field></shadow>
+                    </value>
+                  </block>
+                </value>
+                <value name="ELSE">
+                  <block type="math_arithmetic" id="mart-mult-3">
+                    <field name="OP">MULTIPLY</field>
+                    <value name="A">
+                      <shadow type="math_number" id="mart-shadow-a3"><field name="NUM">1</field></shadow>
+                      <block type="variables_get" id="mart-get-stake-3">
+                        <field name="VAR" id="u]E%rdqSO!DWc9s^8K]F">rdalembert:initialStake</field>
+                      </block>
+                    </value>
+                    <value name="B">
+                      <shadow type="math_number" id="mart-shadow-b3"><field name="NUM">1371.24</field></shadow>
+                    </value>
+                  </block>
                 </value>
               </block>
             </value>
