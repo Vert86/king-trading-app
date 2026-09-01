@@ -63,7 +63,7 @@
             <field name="VAR" id="_ry@=Pn~?k:OMsm69^mj">maxStake</field>
             <value name="VALUE">
               <shadow type="math_number" id="@25M~E*0u|xxQNgzLT*v">
-                <field name="NUM">60</field>
+                <field name="NUM">150</field>
               </shadow>
             </value>
           </block>
@@ -349,7 +349,7 @@
                 <field name="VAR" id="p:YOw{BN8)4wTUEgW?f;">rdalembert:lossThreshold</field>
                 <value name="VALUE">
                   <shadow type="math_number" id=";r.=1[#D:iX}{,}ML-Jh">
-                    <field name="NUM">60</field>
+                    <field name="NUM">150</field>
                   </shadow>
                 </value>
               </block>
@@ -374,7 +374,7 @@
                     <field name="VAR" id="u]E%rdqSO!DWc9s^8K]F">rdalembert:initialStake</field>
                     <value name="VALUE">
                       <shadow type="math_number" id="GS$I./^?H!#WJgs.YN5_">
-                        <field name="NUM">0.35</field>
+                        <field name="NUM">1</field>
                       </shadow>
                     </value>
                   </block>
