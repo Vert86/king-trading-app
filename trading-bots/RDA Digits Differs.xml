@@ -275,7 +275,7 @@
                             </value>
                             <value name="B">
                               <block type="math_number" id=",a^QBRQ%o%:dWMs,19|2">
-                                <field name="NUM">3</field>
+                                <field name="NUM">4</field>
                               </block>
                             </value>
                           </block>
@@ -511,7 +511,7 @@
                   </block>
                 </value>
                 <value name="B">
-                  <shadow type="math_number" id="mart-shadow-b1"><field name="NUM">5</field></shadow>
+                  <shadow type="math_number" id="mart-shadow-b1"><field name="NUM">11</field></shadow>
                 </value>
               </block>
             </value>
@@ -540,21 +540,52 @@
                       </block>
                     </value>
                     <value name="B">
-                      <shadow type="math_number" id="mart-shadow-b2"><field name="NUM">25</field></shadow>
+                      <shadow type="math_number" id="mart-shadow-b2"><field name="NUM">5</field></shadow>
                     </value>
                   </block>
                 </value>
                 <value name="ELSE">
-                  <block type="math_arithmetic" id="mart-mult-3">
-                    <field name="OP">MULTIPLY</field>
-                    <value name="A">
-                      <shadow type="math_number" id="mart-shadow-a3"><field name="NUM">1</field></shadow>
-                      <block type="variables_get" id="mart-get-stake-3">
-                        <field name="VAR" id="u]E%rdqSO!DWc9s^8K]F">rdalembert:initialStake</field>
+                  <block type="logic_ternary" id="mart-inner-ternary-3">
+                    <value name="IF">
+                      <block type="logic_compare" id="mart-cmp-3">
+                        <field name="OP">EQ</field>
+                        <value name="A">
+                          <block type="variables_get" id="mart-get-tu-3">
+                            <field name="VAR" id="Xv=?/_{i5i7(YfFJqUM2">rdalembert:totalUnits</field>
+                          </block>
+                        </value>
+                        <value name="B">
+                          <block type="math_number" id="mart-num-3"><field name="NUM">3</field></block>
+                        </value>
                       </block>
                     </value>
-                    <value name="B">
-                      <shadow type="math_number" id="mart-shadow-b3"><field name="NUM">125</field></shadow>
+                    <value name="THEN">
+                      <block type="math_arithmetic" id="mart-mult-3">
+                        <field name="OP">MULTIPLY</field>
+                        <value name="A">
+                          <shadow type="math_number" id="mart-shadow-a3"><field name="NUM">1</field></shadow>
+                          <block type="variables_get" id="mart-get-stake-3">
+                            <field name="VAR" id="u]E%rdqSO!DWc9s^8K]F">rdalembert:initialStake</field>
+                          </block>
+                        </value>
+                        <value name="B">
+                          <shadow type="math_number" id="mart-shadow-b3"><field name="NUM">25</field></shadow>
+                        </value>
+                      </block>
+                    </value>
+                    <value name="ELSE">
+                      <block type="math_arithmetic" id="mart-mult-4">
+                        <field name="OP">MULTIPLY</field>
+                        <value name="A">
+                          <shadow type="math_number" id="mart-shadow-a4"><field name="NUM">1</field></shadow>
+                          <block type="variables_get" id="mart-get-stake-4">
+                            <field name="VAR" id="u]E%rdqSO!DWc9s^8K]F">rdalembert:initialStake</field>
+                          </block>
+                        </value>
+                        <value name="B">
+                          <shadow type="math_number" id="mart-shadow-b4"><field name="NUM">125</field></shadow>
+                        </value>
+                      </block>
                     </value>
                   </block>
                 </value>
