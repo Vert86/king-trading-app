@@ -13,9 +13,19 @@
  *     headlessly -- no login needed as long as the session cookie/localStorage
  *     is still valid -- opens the configured bot and keeps it running.
  *
+ * Deriv Bot Builder saves bots to the *browser's* local storage, not to the
+ * account server-side -- so a fresh Chrome profile (like the one this script
+ * uses) has no "recent bots" on the Dashboard to pick from, even once logged
+ * in. Instead, every run loads the bot the same way a human would via
+ * Dashboard -> "My computer": by importing the strategy's exported XML file
+ * straight off disk (see BOT_XML_PATH below). Loading it fresh each run also
+ * means edits to that XML take effect on the next restart with no other
+ * setup step.
+ *
  * Config via env vars (see .env.example):
  *   APP_URL            e.g. https://king-trading-app.vercel.app
- *   BOT_NAME           exact "Bot name" text as shown on the Dashboard
+ *   BOT_NAME           display name only, used in log messages
+ *   BOT_XML_PATH       path to the exported bot XML to import (default: ./bots/RDA Digits Differs.xml)
  *   USER_DATA_DIR      persistent Chrome profile directory (default: ./chrome-profile)
  *   CHECK_INTERVAL_MS  how often to check the bot is still running (default: 30000)
  *   HEADLESS           "false" for the one-time login run, otherwise headless
@@ -29,6 +39,7 @@ puppeteer.use(StealthPlugin());
 
 const APP_URL = (process.env.APP_URL || 'https://king-trading-app.vercel.app').replace(/\/$/, '');
 const BOT_NAME = process.env.BOT_NAME || 'RDA Digits Differs';
+const BOT_XML_PATH = process.env.BOT_XML_PATH || path.join(__dirname, 'bots', 'RDA Digits Differs.xml');
 const USER_DATA_DIR = process.env.USER_DATA_DIR || path.join(__dirname, 'chrome-profile');
 const CHECK_INTERVAL_MS = Number(process.env.CHECK_INTERVAL_MS || 30000);
 const HEADLESS = process.env.HEADLESS !== 'false';
@@ -40,10 +51,21 @@ function log(...args) {
 async function isLoggedIn(page) {
   // The header shows "Demo account"/"Real account" plus a balance once
   // authenticated; logged-out shows "Log in"/"Sign up" instead.
-  return page.evaluate(() => {
-    const text = document.body.innerText || '';
-    return /Demo account|Real account/.test(text) && !/Log in/.test(text);
-  });
+  //
+  // This is a best-effort polling check run every couple seconds while the
+  // page may be mid-navigation (OAuth redirect hops, reloads, etc.) -- body
+  // can be null, the execution context can be torn down mid-evaluate, the
+  // target can momentarily not exist. None of that means "logged out", it
+  // means "ask again in a moment", so any failure here is swallowed and
+  // treated as "not confirmed yet" rather than allowed to crash the process.
+  try {
+    return await page.evaluate(() => {
+      const text = document.body ? document.body.innerText || '' : '';
+      return /Demo account|Real account/.test(text) && !/Log in/.test(text);
+    });
+  } catch (err) {
+    return false;
+  }
 }
 
 async function waitForManualLogin(page, timeoutMs = 10 * 60 * 1000) {
@@ -59,37 +81,34 @@ async function waitForManualLogin(page, timeoutMs = 10 * 60 * 1000) {
   return false;
 }
 
-async function openBotFromDashboard(page, botName) {
+async function loadBotFromFile(page, xmlPath) {
   await page.goto(`${APP_URL}/#dashboard`, { waitUntil: 'networkidle2' });
+
+  // "My computer" is one of three tiles under "Load or build your bot"
+  // (My computer / Bot Builder / Quick strategy). Clicking it reveals a
+  // hidden <input type="file"> that Deriv's own import flow uses.
   await page.waitForFunction(
-    (name) => Array.from(document.querySelectorAll('*')).some((el) => el.textContent?.trim() === name),
-    { timeout: 30000 },
-    botName
+    () => Array.from(document.querySelectorAll('.tab__dashboard__table__block')).some(
+      (el) => el.textContent?.trim() === 'My computer'
+    ),
+    { timeout: 30000 }
   );
-
-  // Find the row whose first cell matches botName, click its "open" icon
-  // (first of the three action icons in that row).
-  const clicked = await page.evaluate((name) => {
-    const cells = Array.from(document.querySelectorAll('td, div')).filter(
-      (el) => el.children.length === 0 && el.textContent?.trim() === name
-    );
-    for (const cell of cells) {
-      const row = cell.closest('tr') || cell.closest('[class*="row"]');
-      if (!row) continue;
-      const icons = row.querySelectorAll('svg, img, button');
-      if (icons.length > 0) {
-        icons[0].dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-        return true;
-      }
+  const blocks = await page.$$('.tab__dashboard__table__block');
+  let myComputerTile = null;
+  for (const block of blocks) {
+    const text = await page.evaluate((el) => el.textContent.trim(), block);
+    if (text === 'My computer') {
+      myComputerTile = block;
+      break;
     }
-    return false;
-  }, botName);
-
-  if (!clicked) {
-    throw new Error(
-      `Could not find a bot named "${botName}" on the Dashboard. Check BOT_NAME matches exactly.`
-    );
   }
+  if (!myComputerTile) {
+    throw new Error('Could not find the "My computer" import tile on the Dashboard.');
+  }
+  await myComputerTile.click();
+
+  const fileInput = await page.waitForSelector('input[type=file]', { timeout: 10000 });
+  await fileInput.uploadFile(xmlPath);
 
   await page.waitForFunction(() => location.hash.includes('bot_builder'), { timeout: 30000 });
   // Let the Blockly workspace finish rendering.
@@ -103,10 +122,16 @@ async function clickRun(page) {
 }
 
 async function isBotRunning(page) {
-  return page.evaluate(() => {
-    const text = document.body.innerText || '';
-    return !/Bot is not running/.test(text);
-  });
+  try {
+    return await page.evaluate(() => {
+      const text = document.body ? document.body.innerText || '' : '';
+      return !/Bot is not running/.test(text);
+    });
+  } catch (err) {
+    // Mid-navigation/transient -- let the caller's own error handling and
+    // retry-next-cycle logic decide what to do, don't assume stopped.
+    throw err;
+  }
 }
 
 async function monitorLoop(page) {
@@ -118,7 +143,7 @@ async function monitorLoop(page) {
       const stillLoggedIn = await isLoggedIn(page);
       if (!stillLoggedIn) {
         log('Session appears logged out. Reloading and re-opening the bot...');
-        await openBotFromDashboard(page, BOT_NAME);
+        await loadBotFromFile(page, BOT_XML_PATH);
         await clickRun(page);
         continue;
       }
@@ -136,7 +161,7 @@ async function monitorLoop(page) {
     } catch (err) {
       log('Error during health check, will retry next cycle:', err.message);
       try {
-        await openBotFromDashboard(page, BOT_NAME);
+        await loadBotFromFile(page, BOT_XML_PATH);
         await clickRun(page);
       } catch (recoveryErr) {
         log('Recovery attempt also failed:', recoveryErr.message);
@@ -171,13 +196,24 @@ async function main() {
   }
 
   await page.goto(`${APP_URL}/#dashboard`, { waitUntil: 'networkidle2' });
-  if (!(await isLoggedIn(page))) {
+
+  // React hydration / the auth check can still be settling right after
+  // networkidle2 resolves, so a single immediate check can read a
+  // logged-out-looking DOM even though the session is valid. Poll briefly
+  // before giving up.
+  let loggedIn = false;
+  for (let i = 0; i < 8; i += 1) {
+    loggedIn = await isLoggedIn(page);
+    if (loggedIn) break;
+    await new Promise((r) => setTimeout(r, 1500));
+  }
+  if (!loggedIn) {
     log('ERROR: not logged in and running headless. Run `npm run login` first to establish a session.');
     await browser.close();
     process.exit(1);
   }
 
-  await openBotFromDashboard(page, BOT_NAME);
+  await loadBotFromFile(page, BOT_XML_PATH);
   await clickRun(page);
   log(`"${BOT_NAME}" started.`);
 

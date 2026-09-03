@@ -92,6 +92,23 @@ pm2 restart king-bot-runner # manual restart
 pm2 stop king-bot-runner    # stop
 ```
 
+## How the bot gets loaded
+
+Deriv Bot Builder saves bots to the *browser's* local storage, not to your
+account server-side. That means a fresh Chrome profile (like the one this
+script drives) never has anything under "Recent" on the Dashboard, even once
+logged in — there's nothing there to click into. So instead of hunting for a
+saved-bot row, the runner imports the strategy fresh every time it starts,
+the same way a human would: Dashboard → "My computer" → pick the exported
+`.xml` file. That's what `BOT_XML_PATH` points at (see below).
+
+This folder ships a `bots/` subdirectory with a copy of each strategy's XML
+(`bots/RDA Digits Differs.xml`, `bots/RDA Rise Fall.xml`). **These are copies**
+of the source of truth in the repo's top-level `trading-bots/` folder — after
+editing a bot's ladder or parameters there, re-copy the updated file into
+`automation/bots/` (and re-deploy it to the VPS) before restarting the runner,
+or it'll keep trading the old configuration.
+
 ## Configuration
 
 Set these as environment variables (edit `ecosystem.config.js`, or export
@@ -100,14 +117,15 @@ them before `npm start` for a quick test):
 | Variable | Default | Meaning |
 |---|---|---|
 | `APP_URL` | `https://king-trading-app.vercel.app` | The deployed app |
-| `BOT_NAME` | `RDA Digits Differs` | Must exactly match the name shown on the Dashboard |
+| `BOT_NAME` | `RDA Digits Differs` | Display name only, used in log messages |
+| `BOT_XML_PATH` | `./bots/RDA Digits Differs.xml` | Which exported bot XML to import on startup/restart |
 | `CHECK_INTERVAL_MS` | `30000` | How often to check the bot is still running and restart it if not |
 | `USER_DATA_DIR` | `./chrome-profile` | Where the persistent login session is stored |
 
 To run a second bot (e.g. RDA Rise Fall) at the same time, copy the
 `automation/` folder to a second directory with its own `chrome-profile`
-and a different `BOT_NAME`/pm2 process name — each needs its own browser
-instance and login session.
+and a different `BOT_NAME`/`BOT_XML_PATH`/pm2 process name — each needs its
+own browser instance and login session.
 
 ## What this does and doesn't solve
 
