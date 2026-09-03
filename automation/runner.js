@@ -110,6 +110,39 @@ async function loadBotFromFile(page, xmlPath) {
   const fileInput = await page.waitForSelector('input[type=file]', { timeout: 10000 });
   await fileInput.uploadFile(xmlPath);
 
+  // Selecting the file kicks off an async FileReader that eventually sets
+  // window.Blockly.xmlValues to describe the uploaded strategy, and renders
+  // a *preview* (load-modal-store.ts's readFile(is_preview=true)) -- visible
+  // in the DOM, but not yet the active workspace. The modal's "Open" button
+  // calls loadStrategyOnBotBuilder(), which loads window.Blockly.xmlValues
+  // into the real workspace that Run executes.
+  //
+  // Critically, the Open button's disabled state is NOT tied to that async
+  // read finishing -- it's cleared as soon as the Local tab itself renders
+  // (see onActiveIndexChange in load-modal-store.ts). Clicking Open as soon
+  // as it's enabled is a race: it can fire before xmlValues reflects the
+  // upload, silently loading whatever strategy was already there before
+  // (e.g. this fork's built-in Quick Strategy default Rise/Fall template)
+  // instead of the uploaded bot. Wait for xmlValues.file_name to actually
+  // match the uploaded file before clicking Open.
+  const expectedFileName = path.basename(xmlPath).replace(/\.xml$/i, '');
+  await page.waitForFunction(
+    (name) => window.Blockly?.xmlValues?.file_name === name,
+    { timeout: 15000 },
+    expectedFileName
+  );
+
+  const openButton = await page.waitForFunction(
+    () => {
+      const btn = Array.from(document.querySelectorAll('button')).find(
+        (b) => b.textContent?.trim() === 'Open'
+      );
+      return btn && !btn.disabled ? btn : null;
+    },
+    { timeout: 15000 }
+  );
+  await openButton.asElement().click();
+
   await page.waitForFunction(() => location.hash.includes('bot_builder'), { timeout: 30000 });
   // Let the Blockly workspace finish rendering.
   await new Promise((r) => setTimeout(r, 3000));
