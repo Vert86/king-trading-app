@@ -134,6 +134,34 @@ async function isBotRunning(page) {
   }
 }
 
+async function getSummary(page) {
+  // Reads the bot's own "Summary" panel (Total stake/payout, win/loss counts)
+  // straight out of the DOM. This is the only reliable trade-history source
+  // for this fork -- there is no server-side statement API it exposes -- and
+  // it accumulates for as long as this same page stays open, so restarting
+  // the browser resets it back to zero.
+  try {
+    return await page.evaluate(() => {
+      const text = document.body ? document.body.innerText || '' : '';
+      const lines = text.split('\n').map((l) => l.trim());
+      const pick = (label) => {
+        const idx = lines.indexOf(label);
+        return idx >= 0 ? lines[idx + 1] : null;
+      };
+      return {
+        runs: pick('No. of runs'),
+        won: pick('Contracts won'),
+        lost: pick('Contracts lost'),
+        totalStake: pick('Total stake'),
+        totalPayout: pick('Total payout'),
+        pnl: pick('Total profit/loss'),
+      };
+    });
+  } catch (err) {
+    return null;
+  }
+}
+
 async function monitorLoop(page) {
   log(`Monitoring "${BOT_NAME}" every ${CHECK_INTERVAL_MS}ms. Ctrl+C to stop.`);
   // eslint-disable-next-line no-constant-condition
@@ -156,7 +184,15 @@ async function monitorLoop(page) {
         const confirmedRunning = await isBotRunning(page);
         log(confirmedRunning ? 'Restarted successfully.' : 'Restart click did not take effect, will retry next cycle.');
       } else {
-        log('OK - bot is running.');
+        const summary = await getSummary(page);
+        if (summary && summary.runs) {
+          log(
+            `OK - bot is running. Summary: ${summary.runs} runs, ${summary.won} won, ${summary.lost} lost, ` +
+              `stake ${summary.totalStake}, payout ${summary.totalPayout}, P/L ${summary.pnl}`
+          );
+        } else {
+          log('OK - bot is running.');
+        }
       }
     } catch (err) {
       log('Error during health check, will retry next cycle:', err.message);
