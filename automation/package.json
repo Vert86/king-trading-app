@@ -1,0 +1,16 @@
+{
+  "name": "king-bot-runner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Keeps a King Bot (Deriv DBot fork) trading bot running continuously via a headless/headed browser.",
+  "main": "runner.js",
+  "scripts": {
+    "login": "HEADLESS=false node runner.js",
+    "start": "node runner.js"
+  },
+  "dependencies": {
+    "puppeteer": "^23.0.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  }
+}
