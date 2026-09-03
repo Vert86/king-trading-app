@@ -63,7 +63,7 @@
             <field name="VAR" id="_ry@=Pn~?k:OMsm69^mj">maxStake</field>
             <value name="VALUE">
               <shadow type="math_number" id="@25M~E*0u|xxQNgzLT*v">
-                <field name="NUM">1500</field>
+                <field name="NUM">200</field>
               </shadow>
             </value>
           </block>
@@ -324,7 +324,7 @@
             <field name="VAR" id="LbJ%gBkQn8lHX-LuY;OE">rdalembert:profitThreshold</field>
             <value name="VALUE">
               <shadow type="math_number" id=",IFuj6oUT]7V@]%KDjla">
-                <field name="NUM">50</field>
+                <field name="NUM">20</field>
               </shadow>
             </value>
           </block>
@@ -349,7 +349,7 @@
                 <field name="VAR" id="p:YOw{BN8)4wTUEgW?f;">rdalembert:lossThreshold</field>
                 <value name="VALUE">
                   <shadow type="math_number" id=";r.=1[#D:iX}{,}ML-Jh">
-                    <field name="NUM">1600</field>
+                    <field name="NUM">200</field>
                   </shadow>
                 </value>
               </block>
@@ -511,7 +511,7 @@
                   </block>
                 </value>
                 <value name="B">
-                  <shadow type="math_number" id="mart-shadow-b1"><field name="NUM">11.11</field></shadow>
+                  <shadow type="math_number" id="mart-shadow-b1"><field name="NUM">5</field></shadow>
                 </value>
               </block>
             </value>
@@ -540,7 +540,7 @@
                       </block>
                     </value>
                     <value name="B">
-                      <shadow type="math_number" id="mart-shadow-b2"><field name="NUM">123.43</field></shadow>
+                      <shadow type="math_number" id="mart-shadow-b2"><field name="NUM">25</field></shadow>
                     </value>
                   </block>
                 </value>
@@ -554,7 +554,7 @@
                       </block>
                     </value>
                     <value name="B">
-                      <shadow type="math_number" id="mart-shadow-b3"><field name="NUM">1371.24</field></shadow>
+                      <shadow type="math_number" id="mart-shadow-b3"><field name="NUM">125</field></shadow>
                     </value>
                   </block>
                 </value>
