@@ -324,7 +324,7 @@
             <field name="VAR" id="LbJ%gBkQn8lHX-LuY;OE">rdalembert:profitThreshold</field>
             <value name="VALUE">
               <shadow type="math_number" id=",IFuj6oUT]7V@]%KDjla">
-                <field name="NUM">10</field>
+                <field name="NUM">50</field>
               </shadow>
             </value>
           </block>
