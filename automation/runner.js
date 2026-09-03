@@ -39,7 +39,9 @@ puppeteer.use(StealthPlugin());
 
 const APP_URL = (process.env.APP_URL || 'https://king-trading-app.vercel.app').replace(/\/$/, '');
 const BOT_NAME = process.env.BOT_NAME || 'RDA Digits Differs';
-const BOT_XML_PATH = process.env.BOT_XML_PATH || path.join(__dirname, 'bots', 'RDA Digits Differs.xml');
+const BOT_XML_PATH = process.env.BOT_XML_PATH
+  ? path.resolve(__dirname, process.env.BOT_XML_PATH)
+  : path.join(__dirname, 'bots', 'RDA Digits Differs.xml');
 const USER_DATA_DIR = process.env.USER_DATA_DIR || path.join(__dirname, 'chrome-profile');
 const CHECK_INTERVAL_MS = Number(process.env.CHECK_INTERVAL_MS || 30000);
 const HEADLESS = process.env.HEADLESS !== 'false';

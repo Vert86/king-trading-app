@@ -12,9 +12,13 @@ module.exports = {
       env: {
         HEADLESS: 'true',
         APP_URL: 'https://king-trading-app.vercel.app',
-        BOT_NAME: 'RDA Digits Differs',
-        // BOT_XML_PATH left unset: runner.js defaults to
-        // <automation dir>/bots/RDA Digits Differs.xml
+        BOT_NAME: 'RDA Digits Differs (Flat)',
+        // Flat stake, no martingale-style escalation. Analysis showed any
+        // escalation ladder roughly doubles the average money wagered per
+        // trade (and therefore the loss rate) versus flat betting, for no
+        // offsetting benefit -- see automation/bots/RDA Digits Differs.xml
+        // for the original escalating-ladder version.
+        BOT_XML_PATH: './bots/RDA Digits Differs - Flat.xml',
         CHECK_INTERVAL_MS: '30000',
       },
     },
