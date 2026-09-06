@@ -2,6 +2,8 @@
 
 Exported from the live Bot Builder (Demo account) on 2026-09-01. Import via Dashboard → My computer, or Bot Builder → Import.
 
+**When importing via Dashboard → My computer**: the "Open" button becomes clickable as soon as the Local tab renders, *before* the file has actually finished being read into the workspace. Clicking it too early silently loads whatever strategy was already active instead of your uploaded file. Wait a couple seconds after selecting the file (until the block preview actually changes) before clicking Open. This bit the VPS automation once — see `automation/runner.js`'s `loadBotFromFile` for the fix (waits for `window.Blockly.xmlValues.file_name` to match before clicking).
+
 ## RDA Rise Fall.xml
 - Market: Forex / Major Pairs / EUR-USD (real market data, not synthetic)
 - Contract: Rise/Fall, Duration 15 minutes (platform-enforced minimum for real Forex Rise/Fall)
@@ -65,3 +67,23 @@ Given that, `profitThreshold` was lowered to bank wins more often during favorab
 Two independent reasons, both absent from Differs:
 1. **Variable stake**: Rise Fall still runs Reverse D'Alembert, which deliberately changes the stake after every trade (up on a win, down on a loss). Differs' stake is flat at $1 except during a rare escalation, so almost every normal trade has the same profit; Rise Fall's stake is essentially never the same trade-to-trade, so neither is the profit.
 2. **Variable payout**: Differs' win probability is fixed by the certified RNG (~90%, always), so its payout ratio barely moves. Rise Fall is a real-market EUR-USD directional contract — its payout is priced off actual market volatility and spread at the moment of purchase, which shifts continuously. Even at an identical stake, two Rise Fall trades placed minutes apart can have different payout ratios because the market itself moved.
+
+## VWAP RSI Momentum.xml (2026-09-06, demo-only, experimental — edge not yet verified)
+
+- Market: Forex / Major Pairs / EUR-USD (real market data, same instrument as RDA Rise Fall)
+- Contract: Rise/Fall (CALL/PUT), Duration 15 minutes
+- Stake: flat $1, no martingale/escalation — deliberate, so any observed result reflects the entry signal itself, not stake-shape noise (see the Digits Differs bleed-rate analysis in git history for why escalation muddies this kind of read)
+- Circuit breaker: stops after ±$20 total profit/loss
+
+**Strategy ("Intraday Momentum Setup")**: SMA(20) on 1-minute closes as a VWAP proxy — see caveat below — plus RSI(14) on the same closes.
+- **Long (CALL)**: only after RSI has dipped below 30 (marks `was_oversold = true`) and *then* both price > VWAP proxy and RSI has recovered above 50.
+- **Short (PUT)**: mirror image — only after RSI has spiked above 70 (`was_overbought = true`) and then both price < VWAP proxy and RSI has pulled back below 50.
+- Each oversold/overbought flag is cleared the moment its trade fires, and also invalidated if RSI reaches the *opposite* extreme first without triggering (e.g. an old oversold flag doesn't count once RSI has since gone overbought) — otherwise a stale signal from hours earlier could fire on an unrelated later recovery.
+
+**No true VWAP available on this platform**: Deriv's candle data (`ohlc_values` block) only exposes open/high/low/close/epoch — no volume, for either synthetic indices (no real order flow to measure) or real forex pairs (Deriv doesn't expose traded volume). A textbook volume-weighted average price can't be computed here. The SMA(20) substitute is the standard practice on volume-less platforms, but it is not the same statistic as real VWAP and shouldn't be treated as one when reasoning about why a trade fired.
+
+**Fixing "trades immediately on start" without any special wait/delay block**: `before_purchase` is re-evaluated by the platform on every new tick automatically — it isn't a one-shot check. The earlier RDA Rise Fall bot's own `before_purchase` has an `if/else` that unconditionally purchases either CALL or PUT every single tick with no way to abstain. This bot's entry logic has no `else` branch at all: if neither the long nor short condition is fully met, nothing happens that tick and the platform simply re-runs the same checks on the next one. The bot can sit idle indefinitely — from zero trades up to however long it takes for a real oversold/overbought-then-recovery sequence to occur — before ever placing its first trade. This also means on a *fresh* start, no trade can fire before at least one genuine RSI extreme has actually been observed, since both flags initialize to `false`.
+
+**One structural quirk worth knowing**: the `purchase` block has no `nextStatement` connection — it's designed to always be the last action in a branch, since nothing should run after a contract is bought in that tick. The flag-reset (`was_oversold`/`was_overbought` → false) has to happen *before* the `purchase` call in the block sequence, not after, or the XML fails to load (`"Next statement does not exist"`).
+
+**Status**: structurally validated (loads with zero Blockly warnings, 84 blocks, correct field values confirmed against the live Bot Builder workspace) but **not yet live-tested**. Unlike Digits Differs, this isn't trading against a certified RNG with a known fixed edge — real EUR/USD price action might or might not give this specific VWAP-proxy/RSI combination genuine predictive value, and that can only be answered by actually running it and looking at real results, not by reasoning about it in advance.
